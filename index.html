@@ -1,154 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>JobShield – Fake Job Detector</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
-
-  <!-- Chart.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js" defer></script>
-  <!-- PapaParse CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.5.3/papaparse.min.js" defer></script>
-  <script src="app.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Fake Detector</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-cloud@1.2.5/build/d3.layout.cloud.js"></script>
 </head>
 <body>
-  <header class="header">
-    <h1>JobShield</h1>
-    <p class="subtitle">Fake job posting detector & dataset explorer</p>
-  </header>
+    <div class="container">
+        <header>
+            <h1>Job Fake Detector</h1>
+            <p>AI-powered job posting authenticity checker</p>
+        </header>
 
-  <!-- Tabs -->
-  <nav class="tabs">
-    <button class="tab-button active" data-tab="job-check">Job Check</button>
-    <button class="tab-button" data-tab="eda">EDA / Dataset</button>
-  </nav>
-
-  <main class="main">
-    <!-- Job Check tab -->
-    <section id="job-check" class="tab-content active">
-      <h2>Job Check</h2>
-      <p class="section-description">
-        Fill in the job posting details and click Predict to estimate fraud probability.
-      </p>
-
-      <form id="job-form" class="form">
-        <div class="form-row">
-          <label for="title">Title</label>
-          <input type="text" id="title" name="title" placeholder="e.g. Data Analyst" />
+        <div class="tabs">
+            <button class="tab-button active" data-tab="job-check">Job Check</button>
+            <button class="tab-button" data-tab="eda">EDA</button>
         </div>
 
-        <div class="form-row">
-          <label for="company_profile">Company profile</label>
-          <textarea id="company_profile" name="company_profile" rows="3"
-            placeholder="Brief company description"></textarea>
+        <!-- Job Check Tab -->
+        <div id="job-check" class="tab-content active">
+            <div class="form-container">
+                <form id="job-form">
+                    <div class="form-group">
+                        <label for="title">Title</label>
+                        <input type="text" id="title" placeholder="Job title">
+                    </div>
+                    <div class="form-group">
+                        <label for="company_profile">Company Profile</label>
+                        <textarea id="company_profile" placeholder="Company description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" placeholder="Job description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="requirements">Requirements</label>
+                        <textarea id="requirements" placeholder="Requirements"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="benefits">Benefits</label>
+                        <textarea id="benefits" placeholder="Benefits"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="location">Location</label>
+                        <input type="text" id="location" placeholder="Location">
+                    </div>
+                    <div class="form-group">
+                        <label for="salary_range">Salary Range</label>
+                        <input type="text" id="salary_range" placeholder="Salary range">
+                    </div>
+                    <div class="form-group">
+                        <label for="employment_type">Employment Type</label>
+                        <select id="employment_type">
+                            <option value="">Select type</option>
+                            <option value="Full-time">Full-time</option>
+                            <option value="Part-time">Part-time</option>
+                            <option value="Contract">Contract</option>
+                            <option value="Internship">Internship</option>
+                            <option value="Temporary">Temporary</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="industry">Industry</label>
+                        <input type="text" id="industry" placeholder="Industry">
+                    </div>
+                    <button type="submit" class="predict-btn" id="predict-btn" disabled>Predict →</button>
+                </form>
+            </div>
+            <div id="prediction-result" class="result-container" style="display: none;">
+                <div class="prediction-output">
+                    <div class="probability-bar">
+                        <div id="prob-bar" class="prob-fill"></div>
+                    </div>
+                    <div class="prediction-text">
+                        <span id="prediction-label"></span>
+                        <span id="probability-value"></span>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="form-row">
-          <label for="description">Description</label>
-          <textarea id="description" name="description" rows="5"
-            placeholder="Main job description"></textarea>
+        <!-- EDA Tab -->
+        <div id="eda" class="tab-content">
+            <div class="eda-container">
+                <div class="chart-grid">
+                    <div class="chart-card">
+                        <h3>Class Distribution</h3>
+                        <vas id="classs-dist-chart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Text Length Boxplot</h3>
+                        <vas id="boxxplot-chart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Missing Values</h3>
+                        <vas id="missingg-values-chart"></canvas>
+                    </div>
+                </div>
+                <div class="wordcloud-container">
+                    <div class="wordcloud-card">
+                        <h3>Real Jobs WordCloud</h3>
+                        <svg id="real-wordcloud" width="400" height="300"></svg>
+                    </div>
+                    <div class="wordcloud-card">
+                        <h3>Fake Jobs WordCloud</h3>
+                        <svg id="fake-wordcloud" width="400" height="300"></svg>
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <div class="form-row">
-          <label for="requirements">Requirements</label>
-          <textarea id="requirements" name="requirements" rows="4"
-            placeholder="Key skills and requirements"></textarea>
-        </div>
-
-        <div class="form-row">
-          <label for="benefits">Benefits</label>
-          <textarea id="benefits" name="benefits" rows="3"
-            placeholder="Perks and benefits"></textarea>
-        </div>
-
-        <div class="form-row">
-          <label for="location">Location</label>
-          <input type="text" id="location" name="location" placeholder="e.g. US, CA, San Francisco" />
-        </div>
-
-        <div class="form-row">
-          <label for="salary_range">Salary (USD)</label>
-          <input type="text" id="salary_range" name="salary_range" placeholder="e.g. 60000" />
-        </div>
-
-        <div class="form-row">
-          <label for="employment_type">Employment type</label>
-          <select id="employment_type" name="employment_type">
-            <option value="">Select type</option>
-            <option value="Full-time">Full-time</option>
-            <option value="Part-time">Part-time</option>
-            <option value="Contract">Contract</option>
-            <option value="Internship">Internship</option>
-            <option value="Temporary">Temporary</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-
-        <div class="form-row">
-          <label for="industry">Industry</label>
-          <input type="text" id="industry" name="industry" placeholder="e.g. Information Technology" />
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" id="predict-button">Predict</button>
-          <span id="predict-status" class="status"></span>
-        </div>
-      </form>
-
-      <div id="predict-result" class="result hidden">
-        <div id="predict-message" class="result-message"></div>
-        <div id="predict-prob" class="result-prob"></div>
-      </div>
-
-      <div id="predict-error" class="alert hidden"></div>
-    </section>
-
-    <!-- EDA tab -->
-    <section id="eda" class="tab-content">
-      <h2>EDA / Dataset</h2>
-      <p class="section-description">
-        Dataset of combined real and fraudulent job postings with text fields and a binary fraudulent label. [file:22]
-      </p>
-
-      <section class="eda-summary">
-        <h3>Dataset overview</h3>
-        <ul id="dataset-summary">
-          <li>Total job postings: <span id="total-count">–</span></li>
-          <li>Legitimate postings (fraudulent = 0): <span id="real-count">–</span></li>
-          <li>Fraudulent postings (fraudulent = 1): <span id="fraud-count">–</span></li>
-          <li>Main text fields: title, company_profile, description, requirements, benefits, location, salary_range, employment_type, industry, fulltext. [file:22]</li>
-          <li>Target variable: fraudulent (0 = real, 1 = fake). [file:22]</li>
-        </ul>
-      </section>
-
-      <section class="charts">
-        <div class="chart-card">
-          <h3>Fraudulent vs real postings</h3>
-          <canvas id="fraud-chart"></canvas>
-        </div>
-
-        <div class="chart-card">
-          <h3>Description length distribution</h3>
-          <canvas id="length-chart"></canvas>
-        </div>
-      </section>
-
-      <section class="eda-insights">
-        <h3>Key insights</h3>
-        <ul id="insights-list">
-          <li>Most job postings in the dataset are legitimate, but there is a noticeable fraction of fraudulent ones. [file:22]</li>
-          <li>Fraudulent postings often differ in text length compared with legitimate ones, which can be leveraged as a feature. [file:22]</li>
-          <li>Rich job descriptions, clear company profiles and realistic salary information usually correlate with legitimate jobs. [file:22]</li>
-        </ul>
-      </section>
-
-      <div id="eda-error" class="alert hidden"></div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <span>JobShield &mdash; demo UI for fake job detection model.</span>
-  </footer>
+    <script src="app.js"></script>
 </body>
 </html>
