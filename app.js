@@ -33,16 +33,15 @@ class JobFakeDetector {
             this.showError('Failed to load model or data. Please refresh the page.');
         }
     }
-
-    async loadModel() {
-        try {
-            this.model = await tf.loadLayersModel('model/model.json');
-            console.log('Model loaded successfully');
-        } catch (error) {
-            throw new Error(`Model loading failed: ${error.message}`);
-        }
+async loadModel() {
+    try {
+        this.model = await tf.loadGraphModel('model/model.json');
+        console.log('Model loaded successfully (graph model)');
+    } catch (error) {
+        throw new Error(`Model loading failed: ${error.message}`);
     }
-
+}
+   
     async loadTokenizer() {
         try {
             const response = await fetch('model/frontend_config.json');
