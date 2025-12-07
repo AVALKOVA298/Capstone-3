@@ -304,17 +304,15 @@ class JobFakeDetector {
     }
 
     displayPrediction(prob) {
-        const resultEl = document.getElementById('prediction-result');
-        const labelEl = document.getElementById('prediction-label');
-        const probEl = document.getElementById('probability-value');
-        const barEl = document.getElementById('prob-bar');
+    const resultEl = document.getElementById('prediction-result');
+    const labelEl = document.getElementById('prediction-label');
+    const probEl = document.getElementById('probability-value');
+    const barEl = document.getElementById('prob-bar');
 
-        if (!resultEl || !labelEl || !probEl || !barEl) return;
+    if (!resultEl || !labelEl || !probEl || !barEl) return;
 
-        resultEl.style.display = 'block';
+    resultEl.style.display = 'block';
 
-        const isFake = prob >= 0.5;
-        const label = is
     const isFake = prob >= 0.5;
     const label = isFake ? '⚠️ SUSPICIOUS' : '✅ LEGIT';
     const colorClass = isFake ? 'suspicious' : 'real';
@@ -326,6 +324,4 @@ class JobFakeDetector {
     const barWidth = Math.min(prob * 100, 100);
     barEl.style.width = `${barWidth}%`;
 }
-document.addEventListener('DOMContentLoaded', () => {
-    new JobFakeDetector();
-});
+
