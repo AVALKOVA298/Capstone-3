@@ -324,4 +324,9 @@ class JobFakeDetector {
     const barWidth = Math.min(prob * 100, 100);
     barEl.style.width = `${barWidth}%`;
 }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    new JobFakeDetector();
+});
 
